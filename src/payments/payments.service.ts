@@ -1,20 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { CartsService } from 'src/carts/carts.service';
 import { Payment } from 'src/interfaces/payments';
+import { OrdersService } from 'src/orders/orders.service';
 import { ProductsService } from 'src/products/products.service';
 
 @Injectable()
 export class PaymentsService {
     payments: Payment[] = []
-    constructor(private readonly cartsService: CartsService, private readonly productsService: ProductsService) { }
+    constructor(private readonly cartsService: CartsService, private readonly productsService: ProductsService, private readonly ordersService: OrdersService) { }
 
     processPayment(userId: number, amount: number, status: string, transactionInfo: { transactionId: string, paymentMethod: string } | null) {
         const cart = this.cartsService.getCartByUserId(userId);
         if (!cart) {
-            throw new Error('Cart not found');
+            throw new NotFoundException('Cart not found');
         }
         if (cart.total !== amount) {
-            throw new Error('Incorrect payment amount, any deducted amount will be refunded!');
+            throw new HttpException('Incorrect payment amount, any deducted amount will be refunded!', 400);
         }
         cart.items.forEach(item => {
             this.productsService.validateProductStock(item.productId, item.quantity);
@@ -36,9 +37,11 @@ export class PaymentsService {
             transactionInfo
         };
         this.payments.push(payment);
+        this.ordersService.createOrder({ userId, items: cart.items, status: "pending", total: cart.total });
+        const total = cart.total
         this.cartsService.clearCart(userId);
         return ({
-            message: `Payment of $${cart.total} processed for user ${userId}`,
+            message: `Payment of $${total} processed for user ${userId}`,
             paymentDetails: payment,
         })
     }

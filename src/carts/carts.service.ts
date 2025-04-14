@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InsufficientStockException } from 'src/exceptions/InsufficientStock.exception';
 import { Cart } from 'src/interfaces/cart';
 import { ProductsService } from 'src/products/products.service';
 
@@ -19,7 +20,7 @@ export class CartsService {
         const cart = this.getCartByUserId(userId);
         const product = this.productsService.getProductById(productId);
         if (!product) {
-            throw new Error('Product not found');
+            throw new NotFoundException('Product not found');
         }
         if (!cart) {
             const newCart: Cart = {
@@ -32,7 +33,15 @@ export class CartsService {
             return newCart;
         }
         const itemIndex = cart.items.findIndex(item => item.productId === productId);
+
+        if (quantity > product.stock) {
+            throw new InsufficientStockException(product.id);
+        }
+
         if (itemIndex > -1) {
+            if (cart.items[itemIndex].quantity + quantity > product.stock) {
+                throw new InsufficientStockException(product.id);
+            }
             cart.items[itemIndex].quantity += quantity;
         }
         else {
@@ -51,7 +60,7 @@ export class CartsService {
         if (itemIndex > -1) {
             const product = this.productsService.getProductById(productId);
             if (!product) {
-                throw new Error('Product not found');
+                throw new NotFoundException('Product not found');
             }
             cart.total -= product.price * cart.items[itemIndex].quantity;
             cart.items.splice(itemIndex, 1);
