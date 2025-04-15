@@ -71,13 +71,25 @@ function IsValidHourlyRate(validationOptions?: ValidationOptions) {
                     const countryCode = headers['x-country-code']?.toUpperCase?.();
 
                     let min = 15, max = 100;
-                    if (countryCode === 'IN') {
-                        min = 10;
+                    if (countryCode === 'EU') {
+                        min = 15;
                         max = 80;
                     } else if (countryCode === 'US') {
                         min = 20;
-                        max = 150;
+                        max = 100;
                     }
+                    if (validationOptions) {
+                        validationOptions.context.code = 'HOURLY_RATE_INVALID_FOR_COUNTRY';
+                        validationOptions.context.additionalInfo =
+                        {
+                            allowedRange: {
+                                countryCode,
+                                min,
+                                max
+                            }
+                        }
+                    }
+
 
                     return typeof value === 'number' && value >= min && value <= max;
                 },

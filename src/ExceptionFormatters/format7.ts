@@ -1,18 +1,30 @@
 import { ValidationError } from "class-validator";
 
 export function formatErrors7(errors: ValidationError[], parentPath = ''): { field: string; code: string }[] {
-    const formatted: { field: string; code: string }[] = [];
 
-    for (const error of errors) {
-        const field = parentPath ? `${parentPath}.${error.property}` : error.property;
-        const code = error.toString().toUpperCase()
+    const flattenErrors = (validationErrors: ValidationError[], parentPath = '') => {
+        const result = [] as { field: string; code: string }[];
 
-        if (error.children && error.children.length > 0) {
-            formatted.push(...formatErrors7(error.children, field));
-        } else {
-            formatted.push({ field, code });
+        for (const error of validationErrors) {
+            const fieldPath = parentPath ? `${parentPath}.${error.property}` : error.property;
+
+            if (error.constraints) {
+                for (const [_, message] of Object.entries(error.constraints)) {
+                    result.push({
+                        field: fieldPath,
+                        code: message,
+                    });
+                }
+            }
+
+            if (error.children && error.children.length > 0) {
+                result.push(...flattenErrors(error.children, fieldPath));
+            }
         }
-    }
 
-    return formatted;
+        return result;
+    };
+
+    const formattedErrors = flattenErrors(errors);
+    return formattedErrors
 }

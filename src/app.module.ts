@@ -15,6 +15,6 @@ import { ProductsModule } from './products/products.module';
 
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RateLimitMiddleware).forRoutes('*');
+    // consumer.apply(RateLimitMiddleware).forRoutes('*'); 
   }
 }

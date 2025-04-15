@@ -8,6 +8,8 @@ import { ValidationError } from 'class-validator';
 import { CreateEdu7Dto } from './dto/CreateEdu7Dto';
 import { HttpExceptionFilter7 } from './exceptions/ExceptionFilter7';
 import { EmploymentDto } from './dto/CreateEmp8';
+import { formatErrors7 } from './ExceptionFormatters/format7';
+import { formatErrors8 } from './ExceptionFormatters/formatErrors8';
 
 @Controller()
 export class AppController {
@@ -42,25 +44,41 @@ export class AppController {
   }
 
   @Post("/create-edu")
-  // @UseFilters(new HttpExceptionFilter7())
-  // @UsePipes(new ValidationPipe({
-  //   whitelist: true,
-  //   forbidNonWhitelisted: true,
-  //   exceptionFactory: (errors: ValidationError[]) => {
-  //     return new BadRequestException({
-  //       message: "Validation failed",
-  //       errors
-  //     });
-  //   }
-  // }))
-  createEdu(@Body() createEdu7Dto: CreateEdu7Dto) {
+  createEdu(@Body(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      exceptionFactory: (errors: ValidationError[]) => {
+        const formattedErrors = formatErrors7(errors);
+        return new BadRequestException({
+          message: 'Validation failed',
+          errors: formattedErrors,
+        });
+      }
+    })
+  ) createEdu7Dto: CreateEdu7Dto) {
     return {
       education: createEdu7Dto
     };
   }
 
   @Post("/create-emp")
-  createEmp(@Body() createEmpDto: EmploymentDto) {
+  createEmp(@Body(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      exceptionFactory: (errors: ValidationError[]) => {
+
+        const structuredErrors = formatErrors8(errors);
+
+        return new BadRequestException({
+          message: 'Validation failed',
+          errors: structuredErrors,
+        });
+      }
+
+    })
+  ) createEmpDto: EmploymentDto) {
     return {
       education: createEmpDto
     };
